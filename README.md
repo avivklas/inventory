@@ -18,32 +18,22 @@ as sql server, mongo db or etcd.
 
 ### `DB`
 
-a primitive storage layer  
-how to init:
+a primitive storage layer. it's best if its shared among collections and this is
+why it is initialized independently
+
+**how to init:**
 ```go
 db := DB()
 ```
 
-### `Collection`
-
-an high-level, typed, data access layer for mapping and querying the data as
-by the application needs.
-
-how to init:
-```go
-books := NewCollection[*book](db, "books",
-    Extractor(func(load func(in ...*book)) { load(bars...) }),
-    PrimaryKey("id", func(item *book, keyVal func(string)) { keyVal(item.id) }),
-    AdditionalKey("name", func(item *book, keyVal func(string)) { keyVal(item.name) }),
-)
-```
 
 ### `Extractor`
 
-a simple func that you implement in order to load a specific kind to clutter.  
+a simple func that you implement in order to load a specific kind to the
+collection from the "cold" source.  
 here's an example of loading `foo` from an SQL db:
 ```go
-l := Extractor(func(add ...Item) {
+Extractor(func(add ...Item) {
     rows, err := db.Query("select id, name from foo")
     if err != nil {
         return
@@ -60,6 +50,40 @@ l := Extractor(func(add ...Item) {
         add(&foo)
     }
 })
+```
+
+### `Collection`
+
+an high-level, typed, data access layer for mapping and querying the data as
+by the application needs.
+
+**how to init:**
+```go
+books := NewCollection[*book](db, "books",
+    Extractor(func(load func(in ...*book)) {
+		rs := someDB.QueryAllBooks()
+		for rs.Next() {
+			var book *book
+			err := rs.scan(book)
+            load(book)	
+        }
+	}),
+    PrimaryKey("id", func(book *book, val func(string)) { val(book.id) }),
+)
+```
+
+**creating additional keys for unique properties will provide you with `Getter`
+by the provided key**:
+```go
+bookByName := books.AdditionalKey("name", func(book *book, keyVal func(string)) { val(book.name) }),
+dune, ok := bookByName("Dune")
+```
+
+**you can also map the items by a key that will yield a list for a given value
+of the provided key**:
+```go
+bookByAuthor := books.MapBy("author", func(book *book, val func(string)) { val(book.author) }),
+daBooks, err := bookByAuthor("Douglas Adams")
 ```
 
 ### Reload Data
