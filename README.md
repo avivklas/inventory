@@ -112,7 +112,12 @@ i.Invalidate()
 ```
 
 ## Performance
-benchmark result as first committed the solution on a MacBook Pro 2020 model
+performance is not a key objective of this solution. the idea is to manage fresh
+app data in-memory in a way that will be the most comfortable to work with - 
+types, indexes, etc... if performance is more important for you than readability
+then you should look for other solutions.
+
+benchmark result on a MacBook Pro 2020 model
 
 ```shell
 goos: darwin
