@@ -59,16 +59,17 @@ by the application needs.
 
 **how to init:**
 ```go
-books := NewCollection[*book](db, "books",
-    Extractor(func(load func(in ...*book)) {
+books := NewCollection[*book](db, "books", 
+	Extractor(func(load func(in ...*book)) {
 		rs := someDB.QueryAllBooks()
 		for rs.Next() {
 			var book *book
 			err := rs.scan(book)
-            load(book)	
-        }
-	}),
-    PrimaryKey("id", func(book *book, val func(string)) { val(book.id) }),
+			load(book)
+		}
+		rs.Close()
+	}), 
+	PrimaryKey("id", func(book *book, val func(string)) { val(book.id) }),
 )
 ```
 **how to use**:
