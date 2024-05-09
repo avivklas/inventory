@@ -71,19 +71,36 @@ books := NewCollection[*book](db, "books",
     PrimaryKey("id", func(book *book, val func(string)) { val(book.id) }),
 )
 ```
+**how to use**:
 
-**creating additional keys for unique properties will provide you with `Getter`
-by the provided key**:
+creating additional keys for unique properties will provide you with `Getter`
+by the provided key:
 ```go
 bookByName := books.AdditionalKey("name", func(book *book, keyVal func(string)) { val(book.name) }),
 dune, ok := bookByName("Dune")
 ```
 
-**you can also map the items by a key that will yield a list for a given value
-of the provided key**:
+you can also map the items by a key that will yield a list for a given value
+of the provided key:
 ```go
 bookByAuthor := books.MapBy("author", func(book *book, val func(string)) { val(book.author) }),
 daBooks, err := bookByAuthor("Douglas Adams")
+```
+
+or simply iterating over all items in the collection, with the ability to stop
+whenever you are done:
+```go
+books.Scan(func(book *book) bool {
+	if whatINeeded(book) {
+		// do something with it
+		...
+		// maybe stop?
+		return false
+	} 
+	
+	// proceed to next book
+	return true
+})
 ```
 
 ### Reload Data
