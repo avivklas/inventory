@@ -119,6 +119,21 @@ books.Scan(func(book *book) bool {
 })
 ```
 
+another useful gem is called `Derivative` - it is meant for creating objects
+based on hot-reloaded data - automatically and only once:
+
+```go
+bookTags := inventory.Derive[*book, []string](books, "tags", func(book *book) ([]string, error) {
+	text := loadText(book)
+	return calculateTags(text)
+})
+```
+
+so now you can call `bookTags` with a book and always get the tags relevant to
+the book at its latest state. this will always be invalidated as well and
+re-calculated when required but only once per reload of the original book.
+
+
 ### Reload Data
 reloading the data is performed as a reaction to invalidation of an item. it
 deletes all related items and reloads all the relevant kinds (currently all
