@@ -54,8 +54,11 @@ Extractor(func(add ...Item) {
 
 ### `Collection`
 
-an high-level, typed, data access layer for mapping and querying the data as
-by the application needs.
+a high-level, typed, data access layer for mapping and querying the data by
+the application needs. 
+the required `DB` instance is an interface and you can provide your
+implementation if needed. for example, you can provide an implementation that
+uses a disk if your dataset is too big.
 
 **how to init:**
 ```go
@@ -79,6 +82,17 @@ by the provided key:
 ```go
 bookByName := books.AdditionalKey("name", func(book *book, keyVal func(string)) { val(book.name) }),
 dune, ok := bookByName("Dune")
+```
+
+you can use the `Getter` as a dependency for some struct:
+```go
+type bookService struct {
+	bookByID inventory.Getter[*book]
+}
+
+func (bs *bookService) getBook(id string) (*book, bool) {
+	return bs.bookByID(id)
+}
 ```
 
 you can also map the items by a key that will yield a list for a given value
@@ -115,7 +129,9 @@ i.Invalidate()
 ## Performance
 performance is not a key objective of this solution. the idea is to manage fresh
 app data in-memory in a way that will be the most comfortable to work with - 
-types, indexes, etc... if performance is more important for you than readability
+types, indexes, etc... for comparison, it is much faster than in-mem SQLite, but
+slower than in-mem kv dbs.  
+if performance is more important for you than readability
 then you should look for other solutions.
 
 benchmark result on a MacBook Pro 2020 model
