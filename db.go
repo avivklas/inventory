@@ -22,7 +22,7 @@ type DB interface {
 
 	// GetOrFill is a nice utility that wraps get, put if not exist and return
 	// the value,
-	GetOrFill(key string, fill func() (interface{}, error), tags ...string) (val interface{}, err error)
+	GetOrFill(key string, fill func() (any, error), tags ...string) (val any, err error)
 
 	// Invalidate deletes all keys related to the provided tags
 	Invalidate(tags ...string) (deleted []string)
@@ -31,10 +31,10 @@ type DB interface {
 // DBViewer represents isolated read access handle to the db
 type DBViewer interface {
 	// Get safely retrieves a val identified by the provided key
-	Get(key string) (val interface{}, ok bool)
+	Get(key string) (val any, ok bool)
 
 	// Iter retrieves all the keys under a tag and let you access each item in each key
-	Iter(tag string, fn func(key string, getVal func() (interface{}, bool)) (proceed bool))
+	Iter(tag string, fn func(key string, getVal func() (any, bool)) (proceed bool))
 }
 
 // DBWriter represents isolated write access handle to the db
@@ -43,7 +43,7 @@ type DBWriter interface {
 
 	// Put safely sets the provided val under the provided key indexed by the
 	// provided tags
-	Put(key string, val interface{})
+	Put(key string, val any)
 
 	// Tag simply adds tag on a key
 	Tag(key string, tags ...string)
@@ -57,7 +57,7 @@ func NewDB() DB {
 		storage: storage{
 			map[string]map[string]struct{}{},
 			map[string]map[string]struct{}{},
-			map[string]interface{}{},
+			map[string]any{},
 		},
 	}
 }
@@ -65,7 +65,7 @@ func NewDB() DB {
 type storage struct {
 	tagToKeys map[string]map[string]struct{}
 	keyToTags map[string]map[string]struct{}
-	items     map[string]interface{}
+	items     map[string]any
 }
 
 type db struct {
@@ -111,14 +111,14 @@ func (c *db) Update(updateFn func(DBWriter) error) (err error) {
 		c.t.additions = storage{
 			map[string]map[string]struct{}{},
 			map[string]map[string]struct{}{},
-			map[string]interface{}{},
+			map[string]any{},
 		}
 	}
 	if c.t.deletions.items == nil || c.t.deletions.keyToTags == nil || c.t.deletions.tagToKeys == nil {
 		c.t.deletions = storage{
 			map[string]map[string]struct{}{},
 			map[string]map[string]struct{}{},
-			map[string]interface{}{},
+			map[string]any{},
 		}
 	}
 
@@ -160,7 +160,7 @@ func (c *db) Update(updateFn func(DBWriter) error) (err error) {
 	return
 }
 
-func (c *db) Get(key string) (val interface{}, ok bool) {
+func (c *db) Get(key string) (val any, ok bool) {
 	c.muR.RLock()
 	val, ok = cacheView(c.storage).Get(key)
 	c.muR.RUnlock()
@@ -168,7 +168,7 @@ func (c *db) Get(key string) (val interface{}, ok bool) {
 	return
 }
 
-func (c *db) Iter(tag string, fn func(key string, val func() (interface{}, bool)) (proceed bool)) {
+func (c *db) Iter(tag string, fn func(key string, val func() (any, bool)) (proceed bool)) {
 	c.muR.RLock()
 	cacheView(c.storage).Iter(tag, fn)
 	c.muR.RUnlock()
@@ -176,7 +176,7 @@ func (c *db) Iter(tag string, fn func(key string, val func() (interface{}, bool)
 	return
 }
 
-func (c *db) Put(key string, val interface{}) {
+func (c *db) Put(key string, val any) {
 	_ = c.Update(func(writer DBWriter) error {
 		writer.Put(key, val)
 
@@ -186,7 +186,7 @@ func (c *db) Put(key string, val interface{}) {
 	return
 }
 
-func (c *db) GetOrFill(key string, fill func() (interface{}, error), tags ...string) (val interface{}, err error) {
+func (c *db) GetOrFill(key string, fill func() (any, error), tags ...string) (val any, err error) {
 	val, ok := c.Get(key)
 	if ok {
 		return
@@ -215,20 +215,20 @@ func (c *db) GetOrFill(key string, fill func() (interface{}, error), tags ...str
 
 type cacheView storage
 
-func (c cacheView) Get(key string) (val interface{}, ok bool) {
+func (c cacheView) Get(key string) (val any, ok bool) {
 	val, ok = c.items[key]
 
 	return
 }
 
-func (c cacheView) Iter(tag string, fn func(key string, val func() (interface{}, bool)) bool) {
+func (c cacheView) Iter(tag string, fn func(key string, val func() (any, bool)) bool) {
 	keys, ok := c.tagToKeys[tag]
 	if !ok {
 		return
 	}
 
 	for k := range keys {
-		if !fn(k, func() (interface{}, bool) {
+		if !fn(k, func() (any, bool) {
 			return c.Get(k)
 		}) {
 			break
@@ -272,7 +272,7 @@ func (c *transaction) Tag(key string, tags ...string) {
 	}
 }
 
-func (c *transaction) Get(key string) (val interface{}, ok bool) {
+func (c *transaction) Get(key string) (val any, ok bool) {
 	val, ok = c.additions.items[key]
 	if ok {
 		return
@@ -290,7 +290,7 @@ func (c *transaction) Get(key string) (val interface{}, ok bool) {
 	return
 }
 
-func (c *transaction) Iter(tag string, fn func(key string, val func() (interface{}, bool)) bool) {
+func (c *transaction) Iter(tag string, fn func(key string, val func() (any, bool)) bool) {
 	_, deleted := c.deletions.tagToKeys[tag]
 	if deleted {
 		return
@@ -309,7 +309,7 @@ func (c *transaction) Iter(tag string, fn func(key string, val func() (interface
 			continue
 		}
 
-		proceed := fn(k, func() (interface{}, bool) {
+		proceed := fn(k, func() (any, bool) {
 			return c.Get(k)
 		})
 
@@ -321,7 +321,7 @@ func (c *transaction) Iter(tag string, fn func(key string, val func() (interface
 	return
 }
 
-func (c *transaction) Put(key string, val interface{}) {
+func (c *transaction) Put(key string, val any) {
 	c.additions.items[key] = val
 
 	return

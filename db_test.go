@@ -27,7 +27,7 @@ func Test_db(t *testing.T) {
 
 	expectedResult := "foobarbarbaz"
 	var actualResult string
-	c.Iter("1", func(key string, getVal func() (interface{}, bool)) (proceed bool) {
+	c.Iter("1", func(key string, getVal func() (any, bool)) (proceed bool) {
 		actualResult += key
 		v, ok := getVal()
 		assert.True(t, ok)
@@ -55,7 +55,7 @@ func Test_db(t *testing.T) {
 	assertKV("foo", "bar")
 	c.Invalidate("x")
 
-	val, err := c.GetOrFill("foo", func() (interface{}, error) {
+	val, err := c.GetOrFill("foo", func() (any, error) {
 		return nil, fmt.Errorf("not found")
 	})
 	if !assert.Error(t, err) {
@@ -63,7 +63,7 @@ func Test_db(t *testing.T) {
 	}
 	assert.Equal(t, val, nil)
 
-	val, err = c.GetOrFill("foo", func() (interface{}, error) {
+	val, err = c.GetOrFill("foo", func() (any, error) {
 		return "barz", nil
 	})
 	if !assert.NoError(t, err) {
@@ -73,7 +73,7 @@ func Test_db(t *testing.T) {
 	assert.Equal(t, val, "barz")
 	assertKV("foo", "barz")
 
-	val, err = c.GetOrFill("foo", func() (interface{}, error) {
+	val, err = c.GetOrFill("foo", func() (any, error) {
 		return "bar", nil
 	})
 	if !assert.NoError(t, err) {

@@ -54,7 +54,7 @@ func Infer[Base, Inferred any](baseCol *Collection[Base], mapBy string, mapFn ma
 	})
 
 	q := func(val string, filters ...func(Inferred) bool) (res []Inferred, err error) {
-		inferredCol.db.Iter(mkKey(baseCol.kind, mapBy, val), func(key string, getVal func() (interface{}, bool)) (proceed bool) {
+		inferredCol.db.Iter(mkKey(baseCol.kind, mapBy, val), func(key string, getVal func() (any, bool)) (proceed bool) {
 			item, ok := getVal()
 			if !ok {
 				err = fmt.Errorf("failed to retrieve value of %q", key)
@@ -116,7 +116,7 @@ func Derive[In, Out any](collection *Collection[In], name string, fn func(in In)
 			key = mkKey(fmt.Sprintf("%s/%s", collection.kind, name), collection.pk.key, v)
 		})
 
-		val, err := collection.db.GetOrFill(key, func() (res interface{}, err error) {
+		val, err := collection.db.GetOrFill(key, func() (res any, err error) {
 			res, err = fn(in)
 			if err != nil {
 				return
@@ -183,9 +183,9 @@ func (c *Collection[T]) index(key string, primary bool, value indexFn[T]) Getter
 
 func (c *Collection[T]) getter(key string, primary bool) Getter[T] {
 	return func(val string) (t T, ok bool) {
-		var i interface{}
+		var i any
 		if !primary {
-			c.db.Iter(mkKey(c.kind, key, val), func(key string, getVal func() (interface{}, bool)) (proceed bool) {
+			c.db.Iter(mkKey(c.kind, key, val), func(key string, getVal func() (any, bool)) (proceed bool) {
 				i, ok = getVal()
 				return false
 			})
@@ -245,7 +245,7 @@ func (c *Collection[T]) Scalar(key, value string) Scalar[T] {
 func (c *Collection[T]) MapBy(key string, ref indexFn[T]) Query[T] {
 	c.addIndex(c.kind, key, false, ref)
 	return func(val string, filters ...func(T) bool) (res []T, err error) {
-		c.db.Iter(mkKey(c.kind, key, val), func(key string, getVal func() (interface{}, bool)) (proceed bool) {
+		c.db.Iter(mkKey(c.kind, key, val), func(key string, getVal func() (any, bool)) (proceed bool) {
 			item, ok := getVal()
 			if !ok {
 				err = fmt.Errorf("failed to retrieve value of %q", key)
@@ -278,11 +278,11 @@ func (c *Collection[T]) Scan(consume func(T) bool, filters ...func(T) bool) {
 	var (
 		key  string
 		ok   bool
-		item interface{}
+		item any
 		t    T
 	)
 
-	c.db.Iter(c.kind, func(itemKey string, getVal func() (interface{}, bool)) (proceed bool) {
+	c.db.Iter(c.kind, func(itemKey string, getVal func() (any, bool)) (proceed bool) {
 		_, key, _, ok = parseKey(itemKey)
 		if !ok || key != c.pk.key {
 			return true
