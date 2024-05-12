@@ -5,9 +5,10 @@ similarities with DI containers but instead of initializing once - application
 data containers are required to define the loading procedure of fresh data from
 any source.
 
-It was built to consolidate caching layer operations where the cache layer is
-the only access layer for access. No cold layer. Data is always prepared on
-the hot cache. It is inefficient in writes, but it's more than ok in reads.
+It was built while I worked @Cyolo to consolidate caching layer operations where
+the cache layer is the only access layer for access. No cold layer. Data is
+always prepared on the hot cache. It is rather inefficient in writes (compared to
+a kv store), but it's more than ok in reads.
 
 The big advantage of this structure is that if all the data you need in your hot
 path fits in your memory, it will spare you from the frustrating mechanisms that
