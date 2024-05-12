@@ -18,8 +18,8 @@ as sql server, mongo db or etcd.
 
 ### `DB`
 
-a primitive storage layer. it's best if its shared among collections and this is
-why it is initialized independently
+a primitive storage layer. it's best if it's shared among collections and this is
+why it is initialized independently.
 
 **how to init:**
 ```go
@@ -125,6 +125,9 @@ data of a kind, not only the invalidated items).
 ```go
 i.Invalidate()
 ```
+the underlying db implements isolated transactions and therefore writes don't
+block reads. this means that the data in the db is stale until `Invalidate`
+returns.
 
 ## Performance
 performance is not a key objective of this solution. the idea is to manage fresh
