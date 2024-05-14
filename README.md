@@ -1,4 +1,5 @@
 # Inventory
+![Build Status](https://img.shields.io/github/actions/workflow/status/avivklas/inventory/go.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/avivklas/inventory?style=flat-square)](https://goreportcard.com/report/github.com/avivklas/inventory)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://github.com/avivklas/inventory/blob/master/LICENSE)
 
