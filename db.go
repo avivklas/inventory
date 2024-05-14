@@ -305,7 +305,7 @@ func (c *transaction) Iter(tag string, fn func(key string, val func() (any, bool
 	}
 
 	for k := range c.additions.tagToKeys[tag] {
-		if _, deleted = c.deletions.items[k]; ok {
+		if _, ok = c.deletions.items[k]; ok {
 			continue
 		}
 
@@ -329,12 +329,12 @@ func (c *transaction) Put(key string, val any) {
 
 func (c *transaction) Invalidate(tags ...string) (deleted []string) {
 	for _, tag := range tags {
-		keys, ok := c.deletions.tagToKeys[tag]
+		_, ok := c.deletions.tagToKeys[tag]
 		if ok {
 			continue
 		}
 
-		keys, ok = c.additions.tagToKeys[tag]
+		keys, ok := c.additions.tagToKeys[tag]
 		if !ok {
 			keys, ok = c.origin.tagToKeys[tag]
 		}
@@ -367,7 +367,7 @@ func (c *transaction) deleteKey(key string) {
 
 	tags, ok := c.additions.keyToTags[key]
 	if !ok {
-		tags, ok = c.origin.keyToTags[key]
+		tags, _ = c.origin.keyToTags[key]
 	}
 
 	for tag := range tags {

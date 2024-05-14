@@ -32,7 +32,7 @@ func Test_db(t *testing.T) {
 		v, ok := getVal()
 		assert.True(t, ok)
 
-		s, ok := v.(string)
+		s, _ := v.(string)
 
 		actualResult += s
 
