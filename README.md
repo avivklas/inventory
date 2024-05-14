@@ -1,9 +1,11 @@
 # Inventory
 
-Inventory applies IoC for application in-flight data. It shares some 
-similarities with DI containers but instead of initializing once - application
-data containers are required to define the loading procedure of fresh data from
-any source.
+Inventory applies IoC (Inversion of Control) for application in-flight data. 
+It shares some similarities with DI containers but instead of initializing once,
+application data containers are required to define the loading procedure of
+fresh data from any cold source. the application then enjoys an always-fresh,
+in-mem, indexed data as a dependency that can be passed through structs or
+funcs.
 
 It was built while I worked @Cyolo to consolidate caching layer operations where
 the cache layer is the only access layer for access. No cold layer. Data is
