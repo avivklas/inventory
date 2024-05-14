@@ -27,7 +27,6 @@ why it is initialized independently.
 db := DB()
 ```
 
-
 ### `Extractor`
 
 a simple func that you implement in order to load a specific kind to the
@@ -135,11 +134,11 @@ re-calculated when required but only once per reload of the original book.
 
 
 ### Reload Data
-reloading the data is performed as a reaction to invalidation of an item. it
-deletes all related items and reloads all the relevant kinds (currently all
-data of a kind, not only the invalidated items).
+reloading the data is performed as a reaction to invalidation of a collection. 
+it deletes all related items from related collection and reloads all the
+relevant kinds (currently all data of a kind, not only the invalidated items).
 ```go
-i.Invalidate()
+collection.Invalidate()
 ```
 the underlying db implements isolated transactions and therefore writes don't
 block reads. this means that the data in the db is stale until `Invalidate`
