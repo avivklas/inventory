@@ -1,4 +1,6 @@
 # Inventory
+[![Go Report Card](https://goreportcard.com/badge/github.com/avivklas/inventory?style=flat-square)](https://goreportcard.com/report/github.com/avivklas/inventory)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://github.com/avivklas/inventory/blob/master/LICENSE)
 
 Inventory applies IoC for application in-flight data. It shares some 
 similarities with DI containers but instead of initializing once - application
