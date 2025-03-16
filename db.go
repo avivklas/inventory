@@ -97,14 +97,17 @@ func (c *db) Tag(key string, tags ...string) {
 
 func (c *db) View(viewFn func(DBViewer) error) (err error) {
 	c.muR.RLock()
+	defer c.muR.RUnlock()
+
 	err = viewFn(cacheView(c.storage))
-	c.muR.RUnlock()
 
 	return
 }
 
 func (c *db) Update(updateFn func(DBWriter) error) (err error) {
 	c.muW.Lock()
+	defer c.muW.Unlock()
+
 	c.t.origin = &c.storage
 
 	if c.t.additions.items == nil || c.t.additions.keyToTags == nil || c.t.additions.tagToKeys == nil {
@@ -155,8 +158,6 @@ func (c *db) Update(updateFn func(DBWriter) error) (err error) {
 	clear(c.t.deletions.keyToTags)
 	clear(c.t.deletions.tagToKeys)
 
-	c.muW.Unlock()
-
 	return
 }
 
@@ -170,8 +171,9 @@ func (c *db) Get(key string) (val any, ok bool) {
 
 func (c *db) Iter(tag string, fn func(key string, val func() (any, bool)) (proceed bool)) {
 	c.muR.RLock()
+	defer c.muR.RUnlock()
+
 	cacheView(c.storage).Iter(tag, fn)
-	c.muR.RUnlock()
 
 	return
 }
