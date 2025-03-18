@@ -3,7 +3,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/avivklas/inventory?style=flat-square)](https://goreportcard.com/report/github.com/avivklas/inventory)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](https://github.com/avivklas/inventory/blob/master/LICENSE)
 
-Inventory applies IoC (Inversion of Control) for application in-flight data. 
+Inventory applies IoC (Inversion of Control) for application's hot-reloaded data. 
 It shares some similarities with DI containers but instead of initializing once,
 application data containers are required to define the loading procedure of
 fresh data from any cold source. the application then enjoys an always-fresh,
@@ -19,6 +19,48 @@ The big advantage of this structure is that if all the data you need in your hot
 path fits in your memory, it will spare you from the frustrating mechanisms that
 meant for actively reading from the data center or in a centralized storage such
 as sql server, mongo db or etcd.
+
+## TL;DR
+In the following pattern, that might be familiar, some client holds an API key
+might get updated by a different service. A management console, perhaps. In
+order to avoid expensive calls to the DB in realtime, the client holds the key
+in memory. In this pattern, the service needs to provide a method to update the
+key from outside in a thread-safe manner.
+```go
+type AcmeClient struct {
+	apiKey string
+	client *http.Client
+	mu     sync.RWMutex
+}
+
+func (c *AcmeClient) UpdateAPIKey(apiKey string) {
+	c.mu.Lock()
+	c.apiKey = apiKey
+	c.mu.Unlock()
+}
+
+func (c *AcmeClient) Do(req *http.Request) (*http.Response, error) {
+	c.mu.RLock()
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.apiKey))
+	c.mu.RUnlock()
+	
+	return c.client.Do(req)
+}
+```
+Inventory's philosophy is saying that the key should be a dependency and that the
+service shouldn't include the logic of managing the lifecycle of this value. 
+```go
+type AcmeClient struct {
+	apiKey inventory.Getter[string]
+	client *http.Client
+}
+
+func (c *AcmeClient) Do(req *http.Request) (*http.Response, error) {
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.apiKey()))
+	
+	return c.client.Do(req)
+}
+```
 
 ## Components
 
@@ -153,7 +195,7 @@ returns.
 performance is not a key objective of this solution. the idea is to manage fresh
 app data in-memory in a way that will be the most comfortable to work with - 
 types, indexes, etc... for comparison, it is much faster than in-mem SQLite, but
-slower than in-mem kv dbs.  
+slower than in-mem embedded kv dbs.  
 if performance is more important for you than readability
 then you should look for other solutions.
 
